@@ -1,15 +1,13 @@
+// SPDX-License-Identifier: MIT
 //
 // WizzmasArtwork
 //
-// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.15;
 
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "solmate/tokens/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 
-contract WizzmasArtwork is ERC1155, Ownable, ERC1155Burnable {
+contract WizzmasArtwork is ERC1155, Ownable {
     mapping(uint256 => string) public tokenURIs;
     mapping(uint256 => uint256) public tokenSupply;
     mapping(address => bool) public minters;
@@ -22,7 +20,7 @@ contract WizzmasArtwork is ERC1155, Ownable, ERC1155Burnable {
         _;
     }
 
-    constructor() ERC1155("") {}
+    constructor() ERC1155() {}
 
     function uri(uint256 id) public view override returns (string memory) {
         require(bytes(tokenURIs[id]).length > 0, "MISSING_TOKEN");

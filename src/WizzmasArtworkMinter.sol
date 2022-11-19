@@ -5,20 +5,10 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "solmate/tokens/ERC1155.sol";
+import "./WizzmasArtwork.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-interface ArtworkContract is IERC1155 {
-    function tokenSupply(uint256 tokenId) external returns (uint256);
-
-    function mint(
-        address initialOwner,
-        uint256 tokenId,
-        uint256 amount,
-        bytes calldata data
-    ) external;
-}
 
 contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
     address public wizzmasArtworkAddress;
@@ -38,7 +28,7 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
     }
 
     function mint(uint256 artworkType) public payable nonReentrant {
-        ArtworkContract artwork = ArtworkContract(wizzmasArtworkAddress);
+        WizzmasArtwork artwork = WizzmasArtwork(wizzmasArtworkAddress);
         require(artworkType < numArtworkTypes, "INCORRECT_ARTWORK_TYPE");
         require(mintEnabled, "MINT_CLOSED");
         require(artwork.tokenSupply(artworkType) + 1 <= MAX_SUPPLY, "SOLD_OUT");
