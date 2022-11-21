@@ -1,5 +1,5 @@
 //
-// Wizzmas
+// WizzmasCard
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,10 @@ contract WizzmasCard is
     ReentrancyGuard
 {
     address public artworkAddress;
+    address public wizardsAddress;
+    address public soulsAddress;
+    address public warriorsAddress;
+    address public poniesAddress;
 
     string public baseURI;
 
@@ -33,10 +37,19 @@ contract WizzmasCard is
         address recipient
     );
 
-    constructor(address _wizzmasArtworkAddress, string memory _initialBaseURI)
-        ERC721("WizzmasCard", "WizzmasCard")
-    {
-        artworkAddress = _wizzmasArtworkAddress;
+    constructor(
+        address _artworkAddress,
+        address _wizardsAddres,
+        address _soulsAddress,
+        address _warriorsAddress,
+        address _poniesAddress,
+        string memory _initialBaseURI
+    ) ERC721("WizzmasCard", "WizzmasCard") {
+        artworkAddress = _artworkAddress;
+        wizardsAddress = _wizardsAddres;
+        soulsAddress = _soulsAddress;
+        warriorsAddress = _warriorsAddress;
+        poniesAddress = _poniesAddress;
         setBaseURI(_initialBaseURI);
     }
 
@@ -52,7 +65,14 @@ contract WizzmasCard is
         address recipient
     ) public nonReentrant {
         require(mintEnabled, "MINT_CLOSED");
-        require(msg.sender != recipient, "CANNOT_SEND_TO_SELF");
+        require(_msgSender() != recipient, "SEND_TO_SELF");
+        require(
+            _tokenContract == wizardsAddress ||
+            _tokenContract == soulsAddress  ||
+            _tokenContract == warriorsAddress ||
+            _tokenContract == poniesAddress,
+            "UNSUPPORTED_TOKEN"  
+        );
         require(
             IERC721(_tokenContract).ownerOf(_tokenId) == _msgSender(),
             "NOT_OWNER"
@@ -77,7 +97,7 @@ contract WizzmasCard is
             _tokenContract,
             _tokenId,
             _artworkId,
-            msg.sender,
+            _msgSender(),
             recipient
         );
     }
@@ -133,5 +153,17 @@ contract WizzmasCard is
 
     function setArtworkAddress(address _address) public onlyOwner {
         artworkAddress = _address;
+    }
+
+    function setWizardsAddress(address _address) public onlyOwner {
+        wizardsAddress = _address;
+    }
+
+    function setSoulsAddress(address _address) public onlyOwner {
+        soulsAddress = _address;
+    }
+
+    function setWarriorsAddress(address _address) public onlyOwner {
+        warriorsAddress = _address;
     }
 }

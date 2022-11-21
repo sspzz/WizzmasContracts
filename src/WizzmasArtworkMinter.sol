@@ -62,7 +62,11 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
         mintPrice = _newMintPrice;
     }
 
-    function setArtworkTypeMax(uint256 _artworkTypeMax) public onlyOwner {
+    function setFreeMintsPerAddress(uint256 _numMints) public onlyOwner {
+        freeMintsPerAddress = _numMints;
+    }
+
+    function setNumArtworkTypes(uint256 _artworkTypeMax) public onlyOwner {
         numArtworkTypes = _artworkTypeMax;
     }
 }
