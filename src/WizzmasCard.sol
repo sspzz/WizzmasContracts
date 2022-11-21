@@ -19,6 +19,14 @@ contract WizzmasCard is
     Ownable,
     ReentrancyGuard
 {
+    struct CardData {
+        address tokenContract;
+        uint256 token;
+        uint256 artwork;
+        address sender;
+        address recipient;
+    }
+
     address public artworkAddress;
     address public wizardsAddress;
     address public soulsAddress;
@@ -28,6 +36,8 @@ contract WizzmasCard is
     string public baseURI;
 
     bool public mintEnabled = false;
+
+    mapping(uint256 => CardData) public cards;
 
     event WizzmasCardMinted(
         address tokenContract,
@@ -62,16 +72,16 @@ contract WizzmasCard is
         address _tokenContract,
         uint256 _tokenId,
         uint256 _artworkId,
-        address recipient
+        address _recipient
     ) public nonReentrant {
         require(mintEnabled, "MINT_CLOSED");
-        require(_msgSender() != recipient, "SEND_TO_SELF");
+        require(_msgSender() != _recipient, "SEND_TO_SELF");
         require(
             _tokenContract == wizardsAddress ||
-            _tokenContract == soulsAddress  ||
+            _tokenContract == soulsAddress ||
             _tokenContract == warriorsAddress ||
             _tokenContract == poniesAddress,
-            "UNSUPPORTED_TOKEN"  
+            "UNSUPPORTED_TOKEN"
         );
         require(
             IERC721(_tokenContract).ownerOf(_tokenId) == _msgSender(),
@@ -91,14 +101,22 @@ contract WizzmasCard is
 
         // Mint the Card
         uint256 newId = totalSupply();
-        _safeMint(recipient, newId);
+        _safeMint(_recipient, newId);
+
+        cards[newId] = CardData(
+            _tokenContract,
+            _tokenId,
+            _artworkId,
+            _msgSender(),
+            _recipient
+        );
 
         emit WizzmasCardMinted(
             _tokenContract,
             _tokenId,
             _artworkId,
             _msgSender(),
-            recipient
+            _recipient
         );
     }
 
