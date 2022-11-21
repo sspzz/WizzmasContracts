@@ -1,7 +1,5 @@
-// ForgottenPunks: ForgottenSpells
 //
-// Website: https://forgottenpunks.wtf
-// Twitter: https://twitter.com/forgottenpunk
+// WizzmasArtwork
 //
 // SPDX-License-Identifier: MIT
 
