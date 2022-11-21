@@ -33,6 +33,9 @@ contract WizzmasTest is Test {
     address spz = address(1);
     address jro = address(2);
 
+    string cardBaseURI = "cardsURI/";
+    string artworkBaseURI = "artworkURI/";
+
     function setUp() public {
         owner = address(this);
 
@@ -42,7 +45,10 @@ contract WizzmasTest is Test {
         ponies = new DummyERC721();
 
         artwork = new WizzmasArtwork();
-        artworkMinter = new WizzmasArtworkMinter(address(artwork));
+        artwork.setTokenURI(0, string.concat(artworkBaseURI, "0"));
+        artwork.setTokenURI(1, string.concat(artworkBaseURI, "1"));
+        artwork.setTokenURI(2, string.concat(artworkBaseURI, "2"));
+        artworkMinter = new WizzmasArtworkMinter(address(artwork), 3);
         artwork.addMinter(address(artworkMinter));
         card = new WizzmasCard(
             address(artwork),
@@ -50,22 +56,31 @@ contract WizzmasTest is Test {
             address(souls),
             address(warriors),
             address(ponies),
-            "fakeURI"
+            cardBaseURI
         );
     }
 
     function testInitialState() public {
         // TODO: test states across the board
-        assertEq(card.baseURI(), "fakeURI");
+        assertEq(card.baseURI(), cardBaseURI);
+
+        assertEq(artwork.minters(address(artworkMinter)), true);
+        assertEq(artwork.tokenURIs(0), string.concat(artworkBaseURI, "0"));
+        assertEq(artwork.tokenURIs(1), string.concat(artworkBaseURI, "1"));
+        assertEq(artwork.tokenURIs(2), string.concat(artworkBaseURI, "2"));
     }
 
     function testMintArtwork() public {
         artworkMinter.setMintEnabled(true);
+        uint256 price = artworkMinter.mintPrice();
+        deal(spz, 10000e18);
         vm.startPrank(spz);
         artworkMinter.mint(0);
-        artworkMinter.mint(1);
-        artworkMinter.mint(2);
+        artworkMinter.mint{value: price * 1 wei}(1);
+        artworkMinter.mint{value: price * 1 wei}(2);
         vm.stopPrank();
+
+        assertEq(artworkMinter.minted(spz), 3);
     }
 
     function testMintInvalidArtwork() public {
@@ -85,7 +100,19 @@ contract WizzmasTest is Test {
         card.mint(address(wizards), 0, 0, 0, jro);
         vm.stopPrank();
 
-        ( , , , , address sender, address recipient) = card.cards(0);
+        assertEq(card.tokenURI(0), string.concat(cardBaseURI, "0"));
+        (
+            address tokenContract,
+            uint256 tokenId,
+            uint256 artworkId,
+            string memory message,
+            address sender,
+            address recipient
+        ) = card.cards(0);
+        assertEq(tokenContract, address(wizards));
+        assertEq(tokenId, 0);
+        assertEq(artworkId, 0);
+        assertEq(message, card.messages(0));
         assertEq(sender, spz);
         assertEq(recipient, jro);
     }
@@ -155,5 +182,4 @@ contract WizzmasTest is Test {
         card.mint(address(wizards), 0, 0, 0, spz);
         vm.stopPrank();
     }
-
 }
