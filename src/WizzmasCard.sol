@@ -19,7 +19,7 @@ contract WizzmasCard is
     Ownable,
     ReentrancyGuard
 {
-    struct CardData {
+    struct Card {
         address tokenContract;
         uint256 token;
         uint256 artwork;
@@ -27,6 +27,7 @@ contract WizzmasCard is
         address sender;
         address recipient;
     }
+    event WizzmasCardMinted(Card data);
 
     address public artworkAddress;
     address public wizardsAddress;
@@ -38,7 +39,7 @@ contract WizzmasCard is
 
     bool public mintEnabled = false;
 
-    mapping(uint256 => CardData) public cards;
+    mapping(uint256 => Card) public cards;
 
     string[] public messages = [
         "Have a very Merry Wizzmas!",
@@ -46,15 +47,6 @@ contract WizzmasCard is
         "HoHoHo! Merry Wizzmas!",
         "Happy Holidays! Eat plenty of Jelly Donuts!"
     ];
-
-    event WizzmasCardMinted(
-        address tokenContract,
-        uint256 tokenId,
-        uint256 artworkType,
-        string message,
-        address sender,
-        address recipient
-    );
 
     constructor(
         address _artworkAddress,
@@ -70,10 +62,6 @@ contract WizzmasCard is
         warriorsAddress = _warriorsAddress;
         poniesAddress = _poniesAddress;
         setBaseURI(_initialBaseURI);
-    }
-
-    function _baseURI() internal view virtual override returns (string memory) {
-        return baseURI;
     }
 
     // You must own a wizard to perform the spell
@@ -114,7 +102,7 @@ contract WizzmasCard is
         uint256 newId = totalSupply();
         _safeMint(_recipient, newId);
 
-        cards[newId] = CardData(
+        cards[newId] = Card(
             _tokenContract,
             _tokenId,
             _artworkId,
@@ -122,15 +110,11 @@ contract WizzmasCard is
             _msgSender(),
             _recipient
         );
+        emit WizzmasCardMinted(cards[newId]);
+    }
 
-        emit WizzmasCardMinted(
-            _tokenContract,
-            _tokenId,
-            _artworkId,
-            messages[_messageId],
-            _msgSender(),
-            _recipient
-        );
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseURI;
     }
 
     function tokensOfOwner(address _owner)
@@ -196,5 +180,9 @@ contract WizzmasCard is
 
     function setWarriorsAddress(address _address) public onlyOwner {
         warriorsAddress = _address;
+    }
+
+    function setPoniesAddress(address _address) public onlyOwner {
+        poniesAddress = _address;
     }
 }
