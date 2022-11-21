@@ -23,6 +23,7 @@ contract WizzmasCard is
         address tokenContract;
         uint256 token;
         uint256 artwork;
+        string message;
         address sender;
         address recipient;
     }
@@ -39,10 +40,18 @@ contract WizzmasCard is
 
     mapping(uint256 => CardData) public cards;
 
+    string[] public messages = [
+        "Have a very Merry Wizzmas!",
+        "May your Holidays be full of !magic",
+        "HoHoHo! Merry Wizzmas!",
+        "Happy Holidays! Eat plenty of Jelly Donuts!"
+    ];
+
     event WizzmasCardMinted(
         address tokenContract,
         uint256 tokenId,
         uint256 artworkType,
+        string message,
         address sender,
         address recipient
     );
@@ -72,15 +81,17 @@ contract WizzmasCard is
         address _tokenContract,
         uint256 _tokenId,
         uint256 _artworkId,
+        uint256 _messageId,
         address _recipient
     ) public nonReentrant {
         require(mintEnabled, "MINT_CLOSED");
+        require(_messageId < messages.length, "INVALID_MESSAGE");
         require(_msgSender() != _recipient, "SEND_TO_SELF");
         require(
             _tokenContract == wizardsAddress ||
-            _tokenContract == soulsAddress ||
-            _tokenContract == warriorsAddress ||
-            _tokenContract == poniesAddress,
+                _tokenContract == soulsAddress ||
+                _tokenContract == warriorsAddress ||
+                _tokenContract == poniesAddress,
             "UNSUPPORTED_TOKEN"
         );
         require(
@@ -107,6 +118,7 @@ contract WizzmasCard is
             _tokenContract,
             _tokenId,
             _artworkId,
+            messages[_messageId],
             _msgSender(),
             _recipient
         );
@@ -115,6 +127,7 @@ contract WizzmasCard is
             _tokenContract,
             _tokenId,
             _artworkId,
+            messages[_messageId],
             _msgSender(),
             _recipient
         );

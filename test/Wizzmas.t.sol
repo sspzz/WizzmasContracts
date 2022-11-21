@@ -82,8 +82,12 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         artworkMinter.mint(0);
         wizards.mint();
-        card.mint(address(wizards), 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, jro);
         vm.stopPrank();
+
+        ( , , , , address sender, address recipient) = card.cards(0);
+        assertEq(sender, spz);
+        assertEq(recipient, jro);
     }
 
     function testMintAllCardTypes() public {
@@ -96,13 +100,12 @@ contract WizzmasTest is Test {
         souls.mint();
         warriors.mint();
         ponies.mint();
-        card.mint(address(wizards), 0, 0, jro);
-        card.mint(address(souls), 0, 0, jro);
-        card.mint(address(warriors), 0, 0, jro);
-        card.mint(address(ponies), 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, jro);
+        card.mint(address(souls), 0, 0, 0, jro);
+        card.mint(address(warriors), 0, 0, 0, jro);
+        card.mint(address(ponies), 0, 0, 0, jro);
         vm.stopPrank();
     }
-
 
     function testMintCardWithUnsupportedNFT() public {
         artworkMinter.setMintEnabled(true);
@@ -113,7 +116,7 @@ contract WizzmasTest is Test {
         DummyERC721 unsupp = new DummyERC721();
         unsupp.mint();
         vm.expectRevert(bytes("UNSUPPORTED_TOKEN"));
-        card.mint(address(unsupp), 0, 0, jro);
+        card.mint(address(unsupp), 0, 0, 0, jro);
         vm.stopPrank();
     }
 
@@ -126,7 +129,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         artworkMinter.mint(0);
         vm.expectRevert(bytes("NOT_OWNER"));
-        card.mint(address(wizards), 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, jro);
         vm.stopPrank();
     }
 
@@ -137,7 +140,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         wizards.mint();
         vm.expectRevert(bytes("NO_ARTWORK"));
-        card.mint(address(wizards), 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, jro);
         vm.stopPrank();
     }
 
@@ -149,7 +152,7 @@ contract WizzmasTest is Test {
         wizards.mint();
         artworkMinter.mint(0);
         vm.expectRevert(bytes("SEND_TO_SELF"));
-        card.mint(address(wizards), 0, 0, spz);
+        card.mint(address(wizards), 0, 0, 0, spz);
         vm.stopPrank();
     }
 
