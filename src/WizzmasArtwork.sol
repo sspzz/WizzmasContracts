@@ -51,4 +51,8 @@ contract WizzmasArtwork is ERC1155, Ownable, ERC1155Burnable {
         emit URI(tokenUri, tokenId);
         tokenURIs[tokenId] = tokenUri;
     }
+
+    function withdraw() public onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
+    }
 }
