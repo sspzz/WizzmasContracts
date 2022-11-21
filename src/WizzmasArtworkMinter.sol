@@ -22,19 +22,20 @@ interface ArtworkContract is IERC1155 {
 
 contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
     address public wizzmasArtworkAddress;
-    uint256 public constant MAX_SUPPLY = 1000;    
+    uint256 public constant MAX_SUPPLY = 1000;
 
     bool public mintEnabled = false;
     uint256 public mintPrice = (1 ether * 0.01);
     uint256 public freeMintsPerAddress = 1;
-    mapping(address => uint) public minted;        
+    mapping(address => uint) public minted;
 
-    uint256 public numArtworkTypes = 3;
+    uint256 public numArtworkTypes;
 
-    event WizzmasArtworkMinted(address minter);
+    event WizzmasArtworkMinted(address minter, uint256 artworkType);
 
-    constructor(address _artworkAddress) {
+    constructor(address _artworkAddress, uint256 _numArtworkTypes) {
         wizzmasArtworkAddress = _artworkAddress;
+        numArtworkTypes = _numArtworkTypes;
     }
 
     function mint(uint256 artworkType) public payable nonReentrant {
@@ -42,11 +43,17 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
         require(artworkType < numArtworkTypes, "INCORRECT_ARTWORK_TYPE");
         require(mintEnabled, "MINT_CLOSED");
         require(artwork.tokenSupply(artworkType) + 1 <= MAX_SUPPLY, "SOLD_OUT");
-        require(msg.value == mintPrice || minted[msg.sender] < freeMintsPerAddress, "INCORRECT_ETH_VALUE");
+        require(
+            msg.value == mintPrice ||
+                minted[_msgSender()] < freeMintsPerAddress,
+            "INCORRECT_ETH_VALUE"
+        );
 
         artwork.mint(msg.sender, artworkType, 1, "");
+        
+        minted[_msgSender()] += 1;
 
-        emit WizzmasArtworkMinted(msg.sender);
+        emit WizzmasArtworkMinted(_msgSender(), artworkType);
     }
 
     function withdraw() public onlyOwner {
