@@ -3,9 +3,9 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "../src/WizzmasArtwork.sol";
-import "../src/WizzmasArtworkMinter.sol";
-import "../src/WizzmasCard.sol";
+import "../../src/WizzmasArtwork.sol";
+import "../../src/WizzmasArtworkMinter.sol";
+import "../../src/WizzmasCard.sol";
 
 contract WizzmasScript is Script {
     function run() external {
