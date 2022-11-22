@@ -30,10 +30,21 @@ contract WizzmasCard is
     event WizzmasCardMinted(Card data);
 
     address public artworkAddress;
+
     address public wizardsAddress;
     address public soulsAddress;
     address public warriorsAddress;
     address public poniesAddress;
+    address public beastsAddress;
+    address public spawnAddress;
+    address[] internal contracts = [
+        wizardsAddress,
+        soulsAddress,
+        warriorsAddress,
+        poniesAddress,
+        beastsAddress,
+        spawnAddress
+    ];
 
     string public baseURI;
 
@@ -54,6 +65,8 @@ contract WizzmasCard is
         address _soulsAddress,
         address _warriorsAddress,
         address _poniesAddress,
+        address _beastsAddress,
+        address _spawnAddress,
         string memory _initialBaseURI
     ) ERC721("WizzmasCard", "WizzmasCard") {
         artworkAddress = _artworkAddress;
@@ -61,6 +74,8 @@ contract WizzmasCard is
         soulsAddress = _soulsAddress;
         warriorsAddress = _warriorsAddress;
         poniesAddress = _poniesAddress;
+        beastsAddress = _beastsAddress;
+        spawnAddress = _spawnAddress;
         setBaseURI(_initialBaseURI);
     }
 
@@ -79,7 +94,9 @@ contract WizzmasCard is
             _tokenContract == wizardsAddress ||
                 _tokenContract == soulsAddress ||
                 _tokenContract == warriorsAddress ||
-                _tokenContract == poniesAddress,
+                _tokenContract == poniesAddress ||
+                _tokenContract == beastsAddress ||
+                _tokenContract == spawnAddress,
             "UNSUPPORTED_TOKEN"
         );
         require(
@@ -113,6 +130,14 @@ contract WizzmasCard is
         emit WizzmasCardMinted(cards[newId]);
     }
 
+    function availableMessages() public view returns (string[] memory) {
+        return messages;
+    }
+
+    function supportedContracts() public view returns (address[]) {
+        return contracts;
+    }
+
     function _baseURI() internal view virtual override returns (string memory) {
         return baseURI;
     }
@@ -135,10 +160,6 @@ contract WizzmasCard is
         }
     }
 
-    function withdraw() public onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
-    }
-
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -158,6 +179,10 @@ contract WizzmasCard is
     }
 
     // Only contract owner shall pass
+    function withdraw() public onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
+    }
+
     function setBaseURI(string memory _newBaseURI) public onlyOwner {
         baseURI = _newBaseURI;
     }
@@ -184,5 +209,13 @@ contract WizzmasCard is
 
     function setPoniesAddress(address _address) public onlyOwner {
         poniesAddress = _address;
+    }
+
+    function setBeastsAddress(address _address) public onlyOwner {
+        beastsAddress = _address;
+    }
+
+    function setSpawnAddress(address _address) public onlyOwner {
+        spawnAddress = _address;
     }
 }
