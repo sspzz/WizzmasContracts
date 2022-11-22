@@ -23,6 +23,8 @@ contract WizzmasTest is Test {
     DummyERC721 public souls;
     DummyERC721 public warriors;
     DummyERC721 public ponies;
+    DummyERC721 public beasts;
+    DummyERC721 public spawn;
 
     WizzmasArtwork public artwork;
     WizzmasArtworkMinter public artworkMinter;
@@ -43,6 +45,8 @@ contract WizzmasTest is Test {
         souls = new DummyERC721();
         warriors = new DummyERC721();
         ponies = new DummyERC721();
+        beasts = new DummyERC721();
+        spawn = new DummyERC721();
 
         artwork = new WizzmasArtwork();
         artwork.setTokenURI(0, string.concat(artworkBaseURI, "0"));
@@ -56,6 +60,8 @@ contract WizzmasTest is Test {
             address(souls),
             address(warriors),
             address(ponies),
+            address(beasts),
+            address(spawn),
             cardBaseURI
         );
     }
@@ -70,7 +76,7 @@ contract WizzmasTest is Test {
         assertEq(artwork.tokenURIs(2), string.concat(artworkBaseURI, "2"));
     }
 
-    function testMintArtwork() public {
+    function testMintArtworks() public {
         artworkMinter.setMintEnabled(true);
         uint256 price = artworkMinter.mintPrice();
         deal(spz, 10000e18);
@@ -117,7 +123,7 @@ contract WizzmasTest is Test {
         assertEq(recipient, jro);
     }
 
-    function testMintAllCardTypes() public {
+    function testMintCardForSupportedNFTs() public {
         artworkMinter.setMintEnabled(true);
         card.setMintEnabled(true);
 
@@ -131,6 +137,8 @@ contract WizzmasTest is Test {
         card.mint(address(souls), 0, 0, 0, jro);
         card.mint(address(warriors), 0, 0, 0, jro);
         card.mint(address(ponies), 0, 0, 0, jro);
+        card.mint(address(beasts), 0, 0, 0, jro);
+        card.mint(address(spawn), 0, 0, 0, jro);
         vm.stopPrank();
     }
 
