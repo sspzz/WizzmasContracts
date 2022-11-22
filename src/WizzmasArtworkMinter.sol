@@ -22,14 +22,14 @@ interface ArtworkContract is IERC1155 {
 
 contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
     address public wizzmasArtworkAddress;
-    uint256 public constant MAX_SUPPLY = 1000;
-
+    uint256 public numArtworkTypes;
+    
     bool public mintEnabled = false;
     uint256 public mintPrice = (1 ether * 0.01);
     uint256 public freeMintsPerAddress = 1;
+    uint256 public constant MAX_SUPPLY = 1000;
     mapping(address => uint) public minted;
-
-    uint256 public numArtworkTypes;
+    mapping(uint256 => bool) public tokenFrozen;
 
     event WizzmasArtworkMinted(address minter, uint256 artworkType);
 
@@ -42,6 +42,7 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
         ArtworkContract artwork = ArtworkContract(wizzmasArtworkAddress);
         require(artworkType < numArtworkTypes, "INCORRECT_ARTWORK_TYPE");
         require(mintEnabled, "MINT_CLOSED");
+        require(!tokenFrozen[artworkType], "TOKEN_FROZEN");
         require(artwork.tokenSupply(artworkType) + 1 <= MAX_SUPPLY, "SOLD_OUT");
         require(
             msg.value == mintPrice ||
@@ -50,17 +51,17 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
         );
 
         artwork.mint(msg.sender, artworkType, 1, "");
-        
+
         minted[_msgSender()] += 1;
 
         emit WizzmasArtworkMinted(_msgSender(), artworkType);
     }
 
+    // Only contract owner shall pass
     function withdraw() public onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
 
-    // Only contract owner shall pass
     function setMintEnabled(bool _newMintEnabled) public onlyOwner {
         mintEnabled = _newMintEnabled;
     }
@@ -71,6 +72,10 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
 
     function setFreeMintsPerAddress(uint256 _numMints) public onlyOwner {
         freeMintsPerAddress = _numMints;
+    }
+
+    function freezeToken(uint256 _tokenId) public onlyOwner {
+        tokenFrozen[_tokenId] = true;
     }
 
     function setNumArtworkTypes(uint256 _artworkTypeMax) public onlyOwner {
