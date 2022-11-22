@@ -134,7 +134,7 @@ contract WizzmasCard is
         return messages;
     }
 
-    function supportedContracts() public view returns (address[]) {
+    function supportedContracts() public view returns (address[] memory) {
         return contracts;
     }
 
