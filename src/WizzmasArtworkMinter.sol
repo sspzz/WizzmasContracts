@@ -23,7 +23,7 @@ interface ArtworkContract is IERC1155 {
 contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
     address public wizzmasArtworkAddress;
     uint256 public numArtworkTypes;
-    
+
     bool public mintEnabled = false;
     uint256 public mintPrice = (1 ether * 0.01);
     uint256 public freeMintsPerAddress = 1;
@@ -32,23 +32,39 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
     mapping(uint256 => bool) public tokenFrozen;
 
     event WizzmasArtworkMinted(address minter, uint256 artworkType);
+    event WizzmasArtworkClaimed(address claimer, uint256 artworkType);
 
     constructor(address _artworkAddress, uint256 _numArtworkTypes) {
         wizzmasArtworkAddress = _artworkAddress;
         numArtworkTypes = _numArtworkTypes;
     }
 
-    function mint(uint256 artworkType) public payable nonReentrant {
-        ArtworkContract artwork = ArtworkContract(wizzmasArtworkAddress);
-        require(artworkType < numArtworkTypes, "INCORRECT_ARTWORK_TYPE");
+    function canClaim(address claimer) public view returns (bool) {
+        return minted[claimer] < freeMintsPerAddress;
+    }
+
+    function claim(uint256 artworkType) public nonReentrant {
         require(mintEnabled, "MINT_CLOSED");
         require(!tokenFrozen[artworkType], "TOKEN_FROZEN");
+        require(canClaim(_msgSender()), "FREE_CLAIMS_USED");
+        ArtworkContract artwork = ArtworkContract(wizzmasArtworkAddress);
         require(artwork.tokenSupply(artworkType) + 1 <= MAX_SUPPLY, "SOLD_OUT");
-        require(
-            msg.value == mintPrice ||
-                minted[_msgSender()] < freeMintsPerAddress,
-            "INCORRECT_ETH_VALUE"
-        );
+        require(artworkType < numArtworkTypes, "INCORRECT_ARTWORK_TYPE");
+
+        artwork.mint(msg.sender, artworkType, 1, "");
+
+        minted[_msgSender()] += 1;
+
+        emit WizzmasArtworkClaimed(_msgSender(), artworkType);
+    }
+
+    function mint(uint256 artworkType) public payable nonReentrant {
+        require(mintEnabled, "MINT_CLOSED");
+        require(!tokenFrozen[artworkType], "TOKEN_FROZEN");
+        require(msg.value == mintPrice, "INCORRECT_ETH_VALUE");
+        ArtworkContract artwork = ArtworkContract(wizzmasArtworkAddress);
+        require(artwork.tokenSupply(artworkType) + 1 <= MAX_SUPPLY, "SOLD_OUT");
+        require(artworkType < numArtworkTypes, "INCORRECT_ARTWORK_TYPE");
 
         artwork.mint(msg.sender, artworkType, 1, "");
 

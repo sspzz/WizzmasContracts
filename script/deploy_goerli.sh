@@ -8,4 +8,6 @@ else
     exit 1
 fi
 
-forge script ./script/foundry/Wizzmas.s.sol:WizzmasScript --rpc-url ${GOERLI_RPC_URL} --private-key ${GOERLI_PRIVATE_KEY}
+forge script ./script/foundry/Wizzmas.s.sol:WizzmasScript \
+    --rpc-url ${GOERLI_RPC_URL} \
+    --private-key ${GOERLI_PRIVATE_KEY}

@@ -37,14 +37,7 @@ contract WizzmasCard is
     address public poniesAddress;
     address public beastsAddress;
     address public spawnAddress;
-    address[] internal contracts = [
-        wizardsAddress,
-        soulsAddress,
-        warriorsAddress,
-        poniesAddress,
-        beastsAddress,
-        spawnAddress
-    ];
+    address[] internal contracts;
 
     string public baseURI;
 
@@ -76,6 +69,14 @@ contract WizzmasCard is
         poniesAddress = _poniesAddress;
         beastsAddress = _beastsAddress;
         spawnAddress = _spawnAddress;
+        contracts = [
+            wizardsAddress,
+            soulsAddress,
+            warriorsAddress,
+            poniesAddress,
+            beastsAddress,
+            spawnAddress
+        ];
         setBaseURI(_initialBaseURI);
     }
 
