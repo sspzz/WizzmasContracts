@@ -28,6 +28,7 @@ contract WizzmasCard is
         address recipient;
     }
     event WizzmasCardMinted(Card data);
+    mapping(uint256 => Card) cards;
 
     address public artworkAddress;
 
@@ -43,7 +44,6 @@ contract WizzmasCard is
 
     bool public mintEnabled = false;
 
-    mapping(uint256 => Card) public cards;
 
     string[] public messages = [
         "Have a very Merry Wizzmas!",
@@ -119,7 +119,7 @@ contract WizzmasCard is
         // Mint the Card
         uint256 newId = totalSupply();
         _safeMint(_recipient, newId);
-
+        
         cards[newId] = Card(
             _tokenContract,
             _tokenId,
@@ -129,6 +129,13 @@ contract WizzmasCard is
             _recipient
         );
         emit WizzmasCardMinted(cards[newId]);
+    }
+
+    function getCard(uint256 cardId) public view returns (Card memory) {
+        if (totalSupply() > cardId) {
+            return cards[cardId];
+        }
+        revert("CARD_NOT_MINTED");  
     }
 
     function availableMessages() public view returns (string[] memory) {

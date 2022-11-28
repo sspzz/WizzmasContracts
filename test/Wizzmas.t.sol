@@ -81,7 +81,7 @@ contract WizzmasTest is Test {
         uint256 price = artworkMinter.mintPrice();
         deal(spz, 10000e18);
         vm.startPrank(spz);
-        artworkMinter.mint(0);
+        artworkMinter.claim(0);
         artworkMinter.mint{value: price * 1 wei}(1);
         artworkMinter.mint{value: price * 1 wei}(2);
         vm.stopPrank();
@@ -93,7 +93,7 @@ contract WizzmasTest is Test {
         artworkMinter.setMintEnabled(true);
         vm.expectRevert(bytes("INCORRECT_ARTWORK_TYPE"));
         vm.prank(spz);
-        artworkMinter.mint(3);
+        artworkMinter.claim(3);
     }
 
     function testMintCard() public {
@@ -101,26 +101,24 @@ contract WizzmasTest is Test {
         card.setMintEnabled(true);
 
         vm.startPrank(spz);
-        artworkMinter.mint(0);
+        artworkMinter.claim(0);
         wizards.mint();
         card.mint(address(wizards), 0, 0, 0, jro);
         vm.stopPrank();
 
         assertEq(card.tokenURI(0), string.concat(cardBaseURI, "0"));
-        (
-            address tokenContract,
-            uint256 tokenId,
-            uint256 artworkId,
-            string memory message,
-            address sender,
-            address recipient
-        ) = card.cards(0);
-        assertEq(tokenContract, address(wizards));
-        assertEq(tokenId, 0);
-        assertEq(artworkId, 0);
-        assertEq(message, card.messages(0));
-        assertEq(sender, spz);
-        assertEq(recipient, jro);
+        WizzmasCard.Card memory c = card.getCard(0);
+        assertEq(c.tokenContract, address(wizards));
+        assertEq(c.token, 0);
+        assertEq(c.artwork, 0);
+        assertEq(c.message, card.messages(0));
+        assertEq(c.sender, spz);
+        assertEq(c.recipient, jro);
+    }
+
+    function testGetInvalidCard() public {
+        vm.expectRevert(bytes("CARD_NOT_MINTED"));
+        card.getCard(0);
     }
 
     function testMintCardForSupportedNFTs() public {
@@ -128,11 +126,13 @@ contract WizzmasTest is Test {
         card.setMintEnabled(true);
 
         vm.startPrank(spz);
-        artworkMinter.mint(0);
+        artworkMinter.claim(0);
         wizards.mint();
         souls.mint();
         warriors.mint();
         ponies.mint();
+        beasts.mint();
+        spawn.mint();
         card.mint(address(wizards), 0, 0, 0, jro);
         card.mint(address(souls), 0, 0, 0, jro);
         card.mint(address(warriors), 0, 0, 0, jro);
@@ -147,7 +147,7 @@ contract WizzmasTest is Test {
         card.setMintEnabled(true);
 
         vm.startPrank(spz);
-        artworkMinter.mint(0);
+        artworkMinter.claim(0);
         DummyERC721 unsupp = new DummyERC721();
         unsupp.mint();
         vm.expectRevert(bytes("UNSUPPORTED_TOKEN"));
@@ -162,7 +162,7 @@ contract WizzmasTest is Test {
         vm.prank(jro);
         wizards.mint();
         vm.startPrank(spz);
-        artworkMinter.mint(0);
+        artworkMinter.claim(0);
         vm.expectRevert(bytes("NOT_OWNER"));
         card.mint(address(wizards), 0, 0, 0, jro);
         vm.stopPrank();
@@ -185,7 +185,7 @@ contract WizzmasTest is Test {
 
         vm.startPrank(spz);
         wizards.mint();
-        artworkMinter.mint(0);
+        artworkMinter.claim(0);
         vm.expectRevert(bytes("SEND_TO_SELF"));
         card.mint(address(wizards), 0, 0, 0, spz);
         vm.stopPrank();
