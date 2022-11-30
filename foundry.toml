@@ -11,6 +11,7 @@ remappings = [
     'ds-test/=lib/forge-std/lib/ds-test/src/',
     'interfaces/=src/interfaces',
     'periphery/=src/periphery',
+    'solmate/=lib/solmate/src/',
 ]
 
 [rpc_endpoints]
