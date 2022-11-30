@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "periphery/Ownablearama.sol";
+import {Owned} from "solmate/auth/Owned.sol";
 import {ERC1155} from "solmate/tokens/ERC1155.sol";
 import {LibString} from "solmate/utils/LibString.sol";
 
 
-contract WizzmasTemplate is ERC1155, Ownablearama {
+contract WizzmasTemplate is ERC1155, Owned {
+    //todo: doublecheck owned has functions to save erc20s and not rennounce ownership
     using LibString for uint256;
 
     mapping(uint256 => string) public tokenURIs;
