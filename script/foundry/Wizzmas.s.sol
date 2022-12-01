@@ -32,6 +32,7 @@ contract WizzmasScript is Script {
         artwork.addMinter(address(artworkMinter));
 
         // Cards
+        uint256 numTemplateTypes = 1;
         WizzmasCard card = new WizzmasCard(
             address(artwork),
             vm.envAddress("CONTRACT_ADDRESS_WIZARDS"),
@@ -40,6 +41,7 @@ contract WizzmasScript is Script {
             vm.envAddress("CONTRACT_ADDRESS_PONIES"),
             vm.envAddress("CONTRACT_ADDRESS_BEASTS"),
             vm.envAddress("CONTRACT_ADDRESS_SPAWN"),
+            numTemplateTypes,
             vm.envString("BASE_URI_CARDS")
         );
 

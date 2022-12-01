@@ -62,6 +62,7 @@ contract WizzmasTest is Test {
             address(ponies),
             address(beasts),
             address(spawn),
+            1,
             cardBaseURI
         );
     }
@@ -96,6 +97,19 @@ contract WizzmasTest is Test {
         artworkMinter.claim(3);
     }
 
+    function testManageMessages() public {
+        string[] memory origMessages = card.availableMessages();
+        string memory last = origMessages[origMessages.length-1];
+
+        card.addMessage("Testing123");
+        string[] memory messages = card.availableMessages();
+        assertEq(messages[messages.length-1], "Testing123");
+
+        card.removeMessage(messages.length-1);
+        messages = card.availableMessages();
+        assertEq(messages[messages.length-1], last);
+    }
+
     function testMintCard() public {
         artworkMinter.setMintEnabled(true);
         card.setMintEnabled(true);
@@ -103,7 +117,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         artworkMinter.claim(0);
         wizards.mint();
-        card.mint(address(wizards), 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, 0, jro);
         vm.stopPrank();
 
         assertEq(card.tokenURI(0), string.concat(cardBaseURI, "0"));
@@ -133,12 +147,12 @@ contract WizzmasTest is Test {
         ponies.mint();
         beasts.mint();
         spawn.mint();
-        card.mint(address(wizards), 0, 0, 0, jro);
-        card.mint(address(souls), 0, 0, 0, jro);
-        card.mint(address(warriors), 0, 0, 0, jro);
-        card.mint(address(ponies), 0, 0, 0, jro);
-        card.mint(address(beasts), 0, 0, 0, jro);
-        card.mint(address(spawn), 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, 0, jro);
+        card.mint(address(souls), 0, 0, 0, 0, jro);
+        card.mint(address(warriors), 0, 0, 0, 0, jro);
+        card.mint(address(ponies), 0, 0, 0, 0, jro);
+        card.mint(address(beasts), 0, 0, 0, 0, jro);
+        card.mint(address(spawn), 0, 0, 0, 0, jro);
         vm.stopPrank();
     }
 
@@ -151,7 +165,7 @@ contract WizzmasTest is Test {
         DummyERC721 unsupp = new DummyERC721();
         unsupp.mint();
         vm.expectRevert(bytes("UNSUPPORTED_TOKEN"));
-        card.mint(address(unsupp), 0, 0, 0, jro);
+        card.mint(address(unsupp), 0, 0, 0, 0, jro);
         vm.stopPrank();
     }
 
@@ -164,7 +178,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         artworkMinter.claim(0);
         vm.expectRevert(bytes("NOT_OWNER"));
-        card.mint(address(wizards), 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, 0, jro);
         vm.stopPrank();
     }
 
@@ -175,7 +189,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         wizards.mint();
         vm.expectRevert(bytes("NO_ARTWORK"));
-        card.mint(address(wizards), 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, 0, jro);
         vm.stopPrank();
     }
 
@@ -187,7 +201,7 @@ contract WizzmasTest is Test {
         wizards.mint();
         artworkMinter.claim(0);
         vm.expectRevert(bytes("SEND_TO_SELF"));
-        card.mint(address(wizards), 0, 0, 0, spz);
+        card.mint(address(wizards), 0, 0, 0, 0, spz);
         vm.stopPrank();
     }
 }
