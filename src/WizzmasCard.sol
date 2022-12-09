@@ -12,24 +12,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract WizzmasCard is
-    ERC721,
-    ERC721Burnable,
-    Ownable,
-    ReentrancyGuard
-{
+contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
     struct Card {
         uint256 card;
         address tokenContract;
         uint256 token;
         uint256 artwork;
+        uint256 template;
         string message;
         address sender;
         address recipient;
     }
     mapping(uint256 => Card) cards;
     event WizzmasCardMinted(Card data);
-    
+    uint256 public numTemplates = 0;
+
     using Counters for Counters.Counter;
     Counters.Counter private nextTokenId;
 
@@ -62,6 +59,7 @@ contract WizzmasCard is
         address _poniesAddress,
         address _beastsAddress,
         address _spawnAddress,
+        uint256 _numTemplates,
         string memory _initialBaseURI
     ) ERC721("WizzmasCard", "WizzmasCard") {
         artworkAddress = _artworkAddress;
@@ -79,6 +77,7 @@ contract WizzmasCard is
             beastsAddress,
             spawnAddress
         ];
+        setNumTemplates(_numTemplates);
         setBaseURI(_initialBaseURI);
     }
 
@@ -86,11 +85,13 @@ contract WizzmasCard is
         address _tokenContract,
         uint256 _tokenId,
         uint256 _artworkId,
+        uint256 _templateId,
         uint256 _messageId,
         address _recipient
     ) public nonReentrant {
         require(mintEnabled, "MINT_CLOSED");
         require(_messageId < messages.length, "INVALID_MESSAGE");
+        require(_templateId < numTemplates, "INVALID_TEMPLATE");
         require(_msgSender() != _recipient, "SEND_TO_SELF");
         require(
             _tokenContract == wizardsAddress ||
@@ -113,12 +114,13 @@ contract WizzmasCard is
         uint256 newId = nextTokenId.current();
         _safeMint(_recipient, newId);
         nextTokenId.increment();
-        
+
         cards[newId] = Card(
             newId,
             _tokenContract,
             _tokenId,
             _artworkId,
+            _templateId,
             messages[_messageId],
             _msgSender(),
             _recipient
@@ -130,7 +132,7 @@ contract WizzmasCard is
         if (nextTokenId.current() > cardId) {
             return cards[cardId];
         }
-        revert("CARD_NOT_MINTED");  
+        revert("CARD_NOT_MINTED");
     }
 
     function availableMessages() public view returns (string[] memory) {
@@ -148,6 +150,28 @@ contract WizzmasCard is
     // Only contract owner shall pass
     function withdraw() public onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
+    }
+
+    function setNumTemplates(uint256 _numTemplates) public onlyOwner {
+        numTemplates = _numTemplates;
+    }
+
+    function addMessage(string memory _message) public onlyOwner {
+        messages.push(_message);
+    }
+
+    function addMessages(string[] memory _messages) public onlyOwner {
+        for (uint i = 0; i < _messages.length; i++) {
+            messages.push(_messages[i]);
+        }
+    }
+
+    function removeMessage(uint index) public onlyOwner {
+        require(index < messages.length, "INDEX_OUT_OF_BOUNDS");
+        for (uint i = index; i < messages.length - 1; i++) {
+            messages[i] = messages[i + 1];
+        }
+        messages.pop();
     }
 
     function setBaseURI(string memory _newBaseURI) public onlyOwner {
