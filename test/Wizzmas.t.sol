@@ -7,6 +7,8 @@ import "../src/WizzmasArtworkMinter.sol";
 import "../src/WizzmasCard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
+import "forge-std/console2.sol";
+
 // Fake Wizards contract for testing
 contract DummyERC721 is ERC721 {
     constructor() ERC721("Dummy", "Dummy") {}
@@ -128,6 +130,25 @@ contract WizzmasTest is Test {
         assertEq(c.message, card.messages(0));
         assertEq(c.sender, spz);
         assertEq(c.recipient, jro);
+    }
+
+    function testSenderCards() public {
+        artworkMinter.setMintEnabled(true);
+        card.setMintEnabled(true);
+
+        assertEq(card.getSenderCardIds(spz).length, 0);
+        assertEq(card.getRecipientCardIds(jro).length, 0);
+
+        vm.startPrank(spz);
+        artworkMinter.claim(0);
+        wizards.mint();
+        card.mint(address(wizards), 0, 0, 0, 0, jro);
+        vm.stopPrank();
+
+        assertEq(card.getSenderCardIds(spz).length, 1);
+        assertEq(card.getRecipientCardIds(jro).length, 1);
+
+
     }
 
     function testGetInvalidCard() public {

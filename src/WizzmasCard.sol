@@ -51,8 +51,8 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
         "Happy Holidays! Eat plenty of Jelly Donuts!"
     ];
     
-    mapping(address => uint256[]) senderCards; 
-    mapping(address => uint256[]) recipientCards;
+    mapping(address => uint256[]) private senderCards; 
+    mapping(address => uint256[]) private recipientCards;
 
     constructor(
         address _artworkAddress,
