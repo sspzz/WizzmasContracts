@@ -26,13 +26,11 @@ contract WizzmasTemplate is ERC1155, Owned {
     constructor(string memory _uri) ERC1155(_uri) {}
 
     function mint(
-
-    ) public onlyMinterOrOwner {
         address to,
         uint256 id,
         uint256 amount,
-        bytes memory data,
-    } public onlyMinterOrOwner {
+        bytes memory data
+    ) public onlyMinterOrOwner {
         _mint(to, id, amount, data);
     }
 

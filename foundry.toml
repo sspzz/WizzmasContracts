@@ -12,6 +12,7 @@ remappings = [
     'interfaces/=src/interfaces',
     'periphery/=src/periphery',
     'solmate/=lib/solmate/src/',
+    'erc721a/=lib/ERC721A/contracts/',
 ]
 
 [rpc_endpoints]
