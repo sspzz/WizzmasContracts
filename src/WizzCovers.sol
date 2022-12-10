@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+import {ERC1155} from "solmate/tokens/ERC1155.sol";
+import {Owned} from "solmate/auth/Owned.sol"; //todo: prob swap this out with Auth
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-
-contract WizzCovers is ERC1155 {
+contract WizzCovers is ERC1155, Owned {
     mapping(uint256 => string) public tokenURIs;
     mapping(uint256 => uint256) public tokenSupply;
     mapping(address => bool) public minters;
@@ -12,12 +12,12 @@ contract WizzCovers is ERC1155 {
     modifier onlyMinterOrOwner() {
         require(
             minters[msg.sender] || msg.sender == owner(),
-            "only minter or owner can call this function"
+            "ForgottenRunesTreats: only minter or owner can call this function"
         );
         _;
     }
 
-    constructor() ERC1155("") {}
+    constructor(string memory _uri) ERC1155(_uri) {}
 
     function uri(uint256 id) public view override returns (string memory) {
         require(bytes(tokenURIs[id]).length > 0, "MISSING_TOKEN");
