@@ -50,6 +50,9 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
         "HoHoHo! Merry Wizzmas!",
         "Happy Holidays! Eat plenty of Jelly Donuts!"
     ];
+    
+    mapping(address => uint256[]) senderCards; 
+    mapping(address => uint256[]) recipientCards;
 
     constructor(
         address _artworkAddress,
@@ -125,6 +128,9 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
             _msgSender(),
             _recipient
         );
+
+        senderCards[msg.sender].push(newId);
+        recipientCards[_recipient].push(newId);
         emit WizzmasCardMinted(cards[newId]);
     }
 
@@ -133,6 +139,14 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
             return cards[cardId];
         }
         revert("CARD_NOT_MINTED");
+    }
+
+    function getRecipientCardIds(address recipient) public view returns (uint256[] memory){
+        return recipientCards[recipient];
+    }
+
+    function getSenderCardIds(address sender) public view returns (uint256[] memory) {
+        return senderCards[sender];
     }
 
     function availableMessages() public view returns (string[] memory) {
