@@ -58,7 +58,7 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         for(uint8 i = 0; i < _tokenContracts.length; i++) {
             supportedTokenContracts[_tokenContracts[i]] = true;
         }
-        setNumTemplates(_numTemplates);
+        numTemplates = _numTemplates;
         setBaseURI(_initialBaseURI);
     }
 
@@ -73,7 +73,6 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         require(mintEnabled, "MINT_CLOSED");
         require(_messageId < messages.length, "INVALID_MESSAGE");
         require(_templateId < numTemplates, "INVALID_TEMPLATE");
-        require(msg.sender != _recipient, "SEND_TO_SELF");
         require(supportedTokenContracts[_tokenContract] == true, "Unsupported token contract for mint");
         require(
             ERC721(_tokenContract).ownerOf(_tokenId) == msg.sender,

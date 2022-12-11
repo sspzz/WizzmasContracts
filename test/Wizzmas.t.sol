@@ -223,16 +223,4 @@ contract WizzmasTest is Test {
         card.mint(address(wizards), 0, 0, 0, 0, jro);
         vm.stopPrank();
     }
-
-    function testMintCardSendingToSelf() public {
-        artworkMinter.setMintEnabled(true);
-        card.setMintEnabled(true);
-
-        vm.startPrank(spz);
-        wizards.mint();
-        artworkMinter.claim(0);
-        vm.expectRevert(bytes("SEND_TO_SELF"));
-        card.mint(address(wizards), 0, 0, 0, 0, spz);
-        vm.stopPrank();
-    }
 }
