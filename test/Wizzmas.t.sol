@@ -5,7 +5,9 @@ import "forge-std/Test.sol";
 import "../src/WizzmasArtwork.sol";
 import "../src/WizzmasArtworkMinter.sol";
 import "../src/WizzmasCard.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "solmate/tokens/ERC721.sol";
+
+import "forge-std/console2.sol";
 
 // Fake Wizards contract for testing
 contract DummyERC721 is ERC721 {
@@ -15,6 +17,10 @@ contract DummyERC721 is ERC721 {
 
     function mint() public {
         _safeMint(msg.sender, counter++);
+    }
+
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {
+        return 'testuri';
     }
 }
 
@@ -48,20 +54,23 @@ contract WizzmasTest is Test {
         beasts = new DummyERC721();
         spawn = new DummyERC721();
 
-        artwork = new WizzmasArtwork();
+        artwork = new WizzmasArtwork(owner);
         artwork.setTokenURI(0, string.concat(artworkBaseURI, "0"));
         artwork.setTokenURI(1, string.concat(artworkBaseURI, "1"));
         artwork.setTokenURI(2, string.concat(artworkBaseURI, "2"));
-        artworkMinter = new WizzmasArtworkMinter(address(artwork), 3);
+        artworkMinter = new WizzmasArtworkMinter(address(artwork), 3, owner);
         artwork.addMinter(address(artworkMinter));
+        address[] memory supportedTokens = new address[](6);
+        supportedTokens[0] = address(wizards);
+        supportedTokens[1] = address(souls);
+        supportedTokens[2] = address(warriors);
+        supportedTokens[3] = address(ponies);
+        supportedTokens[4] = address(beasts);
+        supportedTokens[5] = address(spawn);
+
         card = new WizzmasCard(
             address(artwork),
-            address(wizards),
-            address(souls),
-            address(warriors),
-            address(ponies),
-            address(beasts),
-            address(spawn),
+            supportedTokens,
             1,
             cardBaseURI
         );
@@ -130,6 +139,25 @@ contract WizzmasTest is Test {
         assertEq(c.recipient, jro);
     }
 
+    function testSenderCards() public {
+        artworkMinter.setMintEnabled(true);
+        card.setMintEnabled(true);
+
+        assertEq(card.getSenderCardIds(spz).length, 0);
+        assertEq(card.getRecipientCardIds(jro).length, 0);
+
+        vm.startPrank(spz);
+        artworkMinter.claim(0);
+        wizards.mint();
+        card.mint(address(wizards), 0, 0, 0, 0, jro);
+        vm.stopPrank();
+
+        assertEq(card.getSenderCardIds(spz).length, 1);
+        assertEq(card.getRecipientCardIds(jro).length, 1);
+
+
+    }
+
     function testGetInvalidCard() public {
         vm.expectRevert(bytes("CARD_NOT_MINTED"));
         card.getCard(0);
@@ -164,7 +192,10 @@ contract WizzmasTest is Test {
         artworkMinter.claim(0);
         DummyERC721 unsupp = new DummyERC721();
         unsupp.mint();
-        vm.expectRevert(bytes("UNSUPPORTED_TOKEN"));
+
+        console2.log(card.supportedTokenContracts(address(unsupp)));
+
+        vm.expectRevert(bytes("Unsupported token contract for mint"));
         card.mint(address(unsupp), 0, 0, 0, 0, jro);
         vm.stopPrank();
     }
@@ -190,18 +221,6 @@ contract WizzmasTest is Test {
         wizards.mint();
         vm.expectRevert(bytes("NO_ARTWORK"));
         card.mint(address(wizards), 0, 0, 0, 0, jro);
-        vm.stopPrank();
-    }
-
-    function testMintCardSendingToSelf() public {
-        artworkMinter.setMintEnabled(true);
-        card.setMintEnabled(true);
-
-        vm.startPrank(spz);
-        wizards.mint();
-        artworkMinter.claim(0);
-        vm.expectRevert(bytes("SEND_TO_SELF"));
-        card.mint(address(wizards), 0, 0, 0, 0, spz);
         vm.stopPrank();
     }
 }

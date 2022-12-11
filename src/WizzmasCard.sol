@@ -5,14 +5,15 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "solmate/tokens/ERC721.sol";
+import "solmate/tokens/ERC1155.sol";
+import {LibString} from "solmate/utils/LibString.sol";
+import "solmate/utils/ReentrancyGuard.sol";
+import "solmate/auth/Owned.sol";
 
-contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
+contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
+    using LibString for uint256;
+
     struct Card {
         uint256 card;
         address tokenContract;
@@ -27,18 +28,11 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
     event WizzmasCardMinted(Card data);
     uint256 public numTemplates = 0;
 
-    using Counters for Counters.Counter;
-    Counters.Counter private nextTokenId;
+    uint256 private nextTokenId = 0;
 
     address public artworkAddress;
 
-    address public wizardsAddress;
-    address public soulsAddress;
-    address public warriorsAddress;
-    address public poniesAddress;
-    address public beastsAddress;
-    address public spawnAddress;
-    address[] internal contracts;
+    mapping(address => bool) public supportedTokenContracts;
 
     string public baseURI;
 
@@ -50,34 +44,21 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
         "HoHoHo! Merry Wizzmas!",
         "Happy Holidays! Eat plenty of Jelly Donuts!"
     ];
+    
+    mapping(address => uint256[]) public senderCards; 
+    mapping(address => uint256[]) public recipientCards;
 
     constructor(
         address _artworkAddress,
-        address _wizardsAddres,
-        address _soulsAddress,
-        address _warriorsAddress,
-        address _poniesAddress,
-        address _beastsAddress,
-        address _spawnAddress,
+        address[] memory _tokenContracts,
         uint256 _numTemplates,
         string memory _initialBaseURI
-    ) ERC721("WizzmasCard", "WizzmasCard") {
+    ) ERC721("WizzmasCard", "WizzmasCard") Owned(msg.sender) {
         artworkAddress = _artworkAddress;
-        wizardsAddress = _wizardsAddres;
-        soulsAddress = _soulsAddress;
-        warriorsAddress = _warriorsAddress;
-        poniesAddress = _poniesAddress;
-        beastsAddress = _beastsAddress;
-        spawnAddress = _spawnAddress;
-        contracts = [
-            wizardsAddress,
-            soulsAddress,
-            warriorsAddress,
-            poniesAddress,
-            beastsAddress,
-            spawnAddress
-        ];
-        setNumTemplates(_numTemplates);
+        for(uint8 i = 0; i < _tokenContracts.length; i++) {
+            supportedTokenContracts[_tokenContracts[i]] = true;
+        }
+        numTemplates = _numTemplates;
         setBaseURI(_initialBaseURI);
     }
 
@@ -92,28 +73,19 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
         require(mintEnabled, "MINT_CLOSED");
         require(_messageId < messages.length, "INVALID_MESSAGE");
         require(_templateId < numTemplates, "INVALID_TEMPLATE");
-        require(_msgSender() != _recipient, "SEND_TO_SELF");
+        require(supportedTokenContracts[_tokenContract] == true, "Unsupported token contract for mint");
         require(
-            _tokenContract == wizardsAddress ||
-                _tokenContract == soulsAddress ||
-                _tokenContract == warriorsAddress ||
-                _tokenContract == poniesAddress ||
-                _tokenContract == beastsAddress ||
-                _tokenContract == spawnAddress,
-            "UNSUPPORTED_TOKEN"
-        );
-        require(
-            IERC721(_tokenContract).ownerOf(_tokenId) == _msgSender(),
+            ERC721(_tokenContract).ownerOf(_tokenId) == msg.sender,
             "NOT_OWNER"
         );
         require(
-            IERC1155(artworkAddress).balanceOf(_msgSender(), _artworkId) > 0,
+            ERC1155(artworkAddress).balanceOf(msg.sender, _artworkId) > 0,
             "NO_ARTWORK"
         );
 
-        uint256 newId = nextTokenId.current();
+        uint256 newId = nextTokenId;
         _safeMint(_recipient, newId);
-        nextTokenId.increment();
+        ++nextTokenId;
 
         cards[newId] = Card(
             newId,
@@ -122,28 +94,39 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
             _artworkId,
             _templateId,
             messages[_messageId],
-            _msgSender(),
+            msg.sender,
             _recipient
         );
+
+        senderCards[msg.sender].push(newId);
+        recipientCards[_recipient].push(newId);
         emit WizzmasCardMinted(cards[newId]);
     }
 
     function getCard(uint256 cardId) public view returns (Card memory) {
-        if (nextTokenId.current() > cardId) {
+        if (nextTokenId > cardId) {
             return cards[cardId];
         }
         revert("CARD_NOT_MINTED");
+    }
+
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {
+        return string.concat(baseURI, id.toString());
+    }
+
+    function getRecipientCardIds(address recipient) public view returns (uint256[] memory){
+        return recipientCards[recipient];
+    }
+
+    function getSenderCardIds(address sender) public view returns (uint256[] memory) {
+        return senderCards[sender];
     }
 
     function availableMessages() public view returns (string[] memory) {
         return messages;
     }
 
-    function supportedContracts() public view returns (address[] memory) {
-        return contracts;
-    }
-
-    function _baseURI() internal view virtual override returns (string memory) {
+    function _baseURI() internal view virtual returns (string memory) {
         return baseURI;
     }
 
@@ -186,27 +169,7 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
         artworkAddress = _address;
     }
 
-    function setWizardsAddress(address _address) public onlyOwner {
-        wizardsAddress = _address;
-    }
-
-    function setSoulsAddress(address _address) public onlyOwner {
-        soulsAddress = _address;
-    }
-
-    function setWarriorsAddress(address _address) public onlyOwner {
-        warriorsAddress = _address;
-    }
-
-    function setPoniesAddress(address _address) public onlyOwner {
-        poniesAddress = _address;
-    }
-
-    function setBeastsAddress(address _address) public onlyOwner {
-        beastsAddress = _address;
-    }
-
-    function setSpawnAddress(address _address) public onlyOwner {
-        spawnAddress = _address;
+    function setSupportedTokenContract(address _address, bool supported) public onlyOwner {
+        supportedTokenContracts[_address] = supported;
     }
 }

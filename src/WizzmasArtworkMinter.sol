@@ -5,11 +5,11 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "solmate/tokens/ERC1155.sol";
+import "solmate/utils/ReentrancyGuard.sol";
+import "solmate/auth/Owned.sol";
 
-interface ArtworkContract is IERC1155 {
+interface ArtworkContract {
     function tokenSupply(uint256 tokenId) external returns (uint256);
 
     function mint(
@@ -20,7 +20,7 @@ interface ArtworkContract is IERC1155 {
     ) external;
 }
 
-contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
+contract WizzmasArtworkMinter is Owned, ReentrancyGuard {
     address public wizzmasArtworkAddress;
     uint256 public numArtworkTypes;
 
@@ -34,7 +34,7 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
     event WizzmasArtworkMinted(address minter, uint256 artworkType);
     event WizzmasArtworkClaimed(address claimer, uint256 artworkType);
 
-    constructor(address _artworkAddress, uint256 _numArtworkTypes) {
+    constructor(address _artworkAddress, uint256 _numArtworkTypes, address _owner) Owned(_owner) {
         wizzmasArtworkAddress = _artworkAddress;
         numArtworkTypes = _numArtworkTypes;
     }
@@ -46,16 +46,16 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
     function claim(uint256 artworkType) public nonReentrant {
         require(mintEnabled, "MINT_CLOSED");
         require(!tokenFrozen[artworkType], "TOKEN_FROZEN");
-        require(canClaim(_msgSender()), "FREE_CLAIMS_USED");
+        require(canClaim(msg.sender), "FREE_CLAIMS_USED");
         ArtworkContract artwork = ArtworkContract(wizzmasArtworkAddress);
         require(artwork.tokenSupply(artworkType) + 1 <= MAX_SUPPLY, "SOLD_OUT");
         require(artworkType < numArtworkTypes, "INCORRECT_ARTWORK_TYPE");
 
         artwork.mint(msg.sender, artworkType, 1, "");
 
-        minted[_msgSender()] += 1;
+        minted[msg.sender] += 1;
 
-        emit WizzmasArtworkClaimed(_msgSender(), artworkType);
+        emit WizzmasArtworkClaimed(msg.sender, artworkType);
     }
 
     function mint(uint256 artworkType) public payable nonReentrant {
@@ -68,9 +68,9 @@ contract WizzmasArtworkMinter is Ownable, ReentrancyGuard {
 
         artwork.mint(msg.sender, artworkType, 1, "");
 
-        minted[_msgSender()] += 1;
+        minted[msg.sender] += 1;
 
-        emit WizzmasArtworkMinted(_msgSender(), artworkType);
+        emit WizzmasArtworkMinted(msg.sender, artworkType);
     }
 
     // Only contract owner shall pass
