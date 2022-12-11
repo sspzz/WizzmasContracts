@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "solmate/utils/LibString.sol";
 import "../../src/WizzmasArtwork.sol";
 import "../../src/WizzmasArtworkMinter.sol";
 import "../../src/WizzmasCard.sol";
@@ -13,13 +13,13 @@ contract WizzmasScript is Script {
 
         // Artworks
         uint256 numArtworkTypes = 1;
-        WizzmasArtwork artwork = new WizzmasArtwork();
+        WizzmasArtwork artwork = new WizzmasArtwork(msg.sender);
         for (uint i = 0; i < numArtworkTypes; i++) {
             artwork.setTokenURI(
                 i,
                 string.concat(
                     vm.envString("BASE_URI_ARTWORKS"),
-                    Strings.toString(i)
+                    LibString.toString(i)
                 )
             );
         }
@@ -27,7 +27,8 @@ contract WizzmasScript is Script {
         // Artworks Minter
         WizzmasArtworkMinter artworkMinter = new WizzmasArtworkMinter(
             address(artwork),
-            numArtworkTypes
+            numArtworkTypes,
+            msg.sender
         );
         artwork.addMinter(address(artworkMinter));
         artworkMinter.setMintEnabled(true);

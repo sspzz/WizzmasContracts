@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../src/WizzmasArtwork.sol";
 import "../src/WizzmasArtworkMinter.sol";
 import "../src/WizzmasCard.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "solmate/tokens/ERC721.sol";
 
 import "forge-std/console2.sol";
 
@@ -17,6 +17,10 @@ contract DummyERC721 is ERC721 {
 
     function mint() public {
         _safeMint(msg.sender, counter++);
+    }
+
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {
+        return 'testuri';
     }
 }
 
@@ -50,11 +54,11 @@ contract WizzmasTest is Test {
         beasts = new DummyERC721();
         spawn = new DummyERC721();
 
-        artwork = new WizzmasArtwork();
+        artwork = new WizzmasArtwork(owner);
         artwork.setTokenURI(0, string.concat(artworkBaseURI, "0"));
         artwork.setTokenURI(1, string.concat(artworkBaseURI, "1"));
         artwork.setTokenURI(2, string.concat(artworkBaseURI, "2"));
-        artworkMinter = new WizzmasArtworkMinter(address(artwork), 3);
+        artworkMinter = new WizzmasArtworkMinter(address(artwork), 3, owner);
         artwork.addMinter(address(artworkMinter));
         card = new WizzmasCard(
             address(artwork),

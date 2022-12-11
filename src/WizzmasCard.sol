@@ -5,14 +5,15 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "solmate/tokens/ERC721.sol";
+import "solmate/tokens/ERC1155.sol";
+import {LibString} from "solmate/utils/LibString.sol";
+import "solmate/utils/ReentrancyGuard.sol";
+import "solmate/auth/Owned.sol";
 
-contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
+contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
+    using LibString for uint256;
+
     struct Card {
         uint256 card;
         address tokenContract;
@@ -27,8 +28,7 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
     event WizzmasCardMinted(Card data);
     uint256 public numTemplates = 0;
 
-    using Counters for Counters.Counter;
-    Counters.Counter private nextTokenId;
+    uint256 private nextTokenId = 0;
 
     address public artworkAddress;
 
@@ -64,7 +64,7 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
         address _spawnAddress,
         uint256 _numTemplates,
         string memory _initialBaseURI
-    ) ERC721("WizzmasCard", "WizzmasCard") {
+    ) ERC721("WizzmasCard", "WizzmasCard") Owned(msg.sender) {
         artworkAddress = _artworkAddress;
         wizardsAddress = _wizardsAddres;
         soulsAddress = _soulsAddress;
@@ -95,7 +95,7 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
         require(mintEnabled, "MINT_CLOSED");
         require(_messageId < messages.length, "INVALID_MESSAGE");
         require(_templateId < numTemplates, "INVALID_TEMPLATE");
-        require(_msgSender() != _recipient, "SEND_TO_SELF");
+        require(msg.sender != _recipient, "SEND_TO_SELF");
         require(
             _tokenContract == wizardsAddress ||
                 _tokenContract == soulsAddress ||
@@ -106,17 +106,17 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
             "UNSUPPORTED_TOKEN"
         );
         require(
-            IERC721(_tokenContract).ownerOf(_tokenId) == _msgSender(),
+            ERC721(_tokenContract).ownerOf(_tokenId) == msg.sender,
             "NOT_OWNER"
         );
         require(
-            IERC1155(artworkAddress).balanceOf(_msgSender(), _artworkId) > 0,
+            ERC1155(artworkAddress).balanceOf(msg.sender, _artworkId) > 0,
             "NO_ARTWORK"
         );
 
-        uint256 newId = nextTokenId.current();
+        uint256 newId = nextTokenId;
         _safeMint(_recipient, newId);
-        nextTokenId.increment();
+        ++nextTokenId;
 
         cards[newId] = Card(
             newId,
@@ -125,7 +125,7 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
             _artworkId,
             _templateId,
             messages[_messageId],
-            _msgSender(),
+            msg.sender,
             _recipient
         );
 
@@ -135,10 +135,14 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
     }
 
     function getCard(uint256 cardId) public view returns (Card memory) {
-        if (nextTokenId.current() > cardId) {
+        if (nextTokenId > cardId) {
             return cards[cardId];
         }
         revert("CARD_NOT_MINTED");
+    }
+
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {
+        return string.concat(baseURI, id.toString());
     }
 
     function getRecipientCardIds(address recipient) public view returns (uint256[] memory){
@@ -157,7 +161,7 @@ contract WizzmasCard is ERC721, ERC721Burnable, Ownable, ReentrancyGuard {
         return contracts;
     }
 
-    function _baseURI() internal view virtual override returns (string memory) {
+    function _baseURI() internal view virtual returns (string memory) {
         return baseURI;
     }
 
