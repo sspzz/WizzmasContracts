@@ -60,14 +60,17 @@ contract WizzmasTest is Test {
         artwork.setTokenURI(2, string.concat(artworkBaseURI, "2"));
         artworkMinter = new WizzmasArtworkMinter(address(artwork), 3, owner);
         artwork.addMinter(address(artworkMinter));
+        address[] memory supportedTokens = new address[](6);
+        supportedTokens[0] = address(wizards);
+        supportedTokens[1] = address(souls);
+        supportedTokens[2] = address(warriors);
+        supportedTokens[3] = address(ponies);
+        supportedTokens[4] = address(beasts);
+        supportedTokens[5] = address(spawn);
+
         card = new WizzmasCard(
             address(artwork),
-            address(wizards),
-            address(souls),
-            address(warriors),
-            address(ponies),
-            address(beasts),
-            address(spawn),
+            supportedTokens,
             1,
             cardBaseURI
         );
@@ -189,7 +192,10 @@ contract WizzmasTest is Test {
         artworkMinter.claim(0);
         DummyERC721 unsupp = new DummyERC721();
         unsupp.mint();
-        vm.expectRevert(bytes("UNSUPPORTED_TOKEN"));
+
+        console2.log(card.supportedTokenContracts(address(unsupp)));
+
+        vm.expectRevert(bytes("Unsupported token contract for mint"));
         card.mint(address(unsupp), 0, 0, 0, 0, jro);
         vm.stopPrank();
     }

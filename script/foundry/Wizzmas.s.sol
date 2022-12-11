@@ -35,14 +35,17 @@ contract WizzmasScript is Script {
 
         // Cards
         uint256 numTemplateTypes = 2;
+        address[] memory supportedTokens = new address[](6);
+        supportedTokens[0] = vm.envAddress("CONTRACT_ADDRESS_WIZARDS");
+        supportedTokens[1] = vm.envAddress("CONTRACT_ADDRESS_SOULS");
+        supportedTokens[2] = vm.envAddress("CONTRACT_ADDRESS_WARRIORS");
+        supportedTokens[3] = vm.envAddress("CONTRACT_ADDRESS_PONIES");
+        supportedTokens[4] = vm.envAddress("CONTRACT_ADDRESS_BEASTS");
+        supportedTokens[5] = vm.envAddress("CONTRACT_ADDRESS_SPAWN");
+
         WizzmasCard card = new WizzmasCard(
             address(artwork),
-            vm.envAddress("CONTRACT_ADDRESS_WIZARDS"),
-            vm.envAddress("CONTRACT_ADDRESS_SOULS"),
-            vm.envAddress("CONTRACT_ADDRESS_WARRIORS"),
-            vm.envAddress("CONTRACT_ADDRESS_PONIES"),
-            vm.envAddress("CONTRACT_ADDRESS_BEASTS"),
-            vm.envAddress("CONTRACT_ADDRESS_SPAWN"),
+            supportedTokens,
             numTemplateTypes,
             vm.envString("BASE_URI_CARDS")
         );

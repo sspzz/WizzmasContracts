@@ -32,13 +32,7 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
 
     address public artworkAddress;
 
-    address public wizardsAddress;
-    address public soulsAddress;
-    address public warriorsAddress;
-    address public poniesAddress;
-    address public beastsAddress;
-    address public spawnAddress;
-    address[] internal contracts;
+    mapping(address => bool) public supportedTokenContracts;
 
     string public baseURI;
 
@@ -51,35 +45,19 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         "Happy Holidays! Eat plenty of Jelly Donuts!"
     ];
     
-    mapping(address => uint256[]) private senderCards; 
-    mapping(address => uint256[]) private recipientCards;
+    mapping(address => uint256[]) public senderCards; 
+    mapping(address => uint256[]) public recipientCards;
 
     constructor(
         address _artworkAddress,
-        address _wizardsAddres,
-        address _soulsAddress,
-        address _warriorsAddress,
-        address _poniesAddress,
-        address _beastsAddress,
-        address _spawnAddress,
+        address[] memory _tokenContracts,
         uint256 _numTemplates,
         string memory _initialBaseURI
     ) ERC721("WizzmasCard", "WizzmasCard") Owned(msg.sender) {
         artworkAddress = _artworkAddress;
-        wizardsAddress = _wizardsAddres;
-        soulsAddress = _soulsAddress;
-        warriorsAddress = _warriorsAddress;
-        poniesAddress = _poniesAddress;
-        beastsAddress = _beastsAddress;
-        spawnAddress = _spawnAddress;
-        contracts = [
-            wizardsAddress,
-            soulsAddress,
-            warriorsAddress,
-            poniesAddress,
-            beastsAddress,
-            spawnAddress
-        ];
+        for(uint8 i = 0; i < _tokenContracts.length; i++) {
+            supportedTokenContracts[_tokenContracts[i]] = true;
+        }
         setNumTemplates(_numTemplates);
         setBaseURI(_initialBaseURI);
     }
@@ -96,15 +74,7 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         require(_messageId < messages.length, "INVALID_MESSAGE");
         require(_templateId < numTemplates, "INVALID_TEMPLATE");
         require(msg.sender != _recipient, "SEND_TO_SELF");
-        require(
-            _tokenContract == wizardsAddress ||
-                _tokenContract == soulsAddress ||
-                _tokenContract == warriorsAddress ||
-                _tokenContract == poniesAddress ||
-                _tokenContract == beastsAddress ||
-                _tokenContract == spawnAddress,
-            "UNSUPPORTED_TOKEN"
-        );
+        require(supportedTokenContracts[_tokenContract] == true, "Unsupported token contract for mint");
         require(
             ERC721(_tokenContract).ownerOf(_tokenId) == msg.sender,
             "NOT_OWNER"
@@ -157,10 +127,6 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         return messages;
     }
 
-    function supportedContracts() public view returns (address[] memory) {
-        return contracts;
-    }
-
     function _baseURI() internal view virtual returns (string memory) {
         return baseURI;
     }
@@ -204,27 +170,7 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         artworkAddress = _address;
     }
 
-    function setWizardsAddress(address _address) public onlyOwner {
-        wizardsAddress = _address;
-    }
-
-    function setSoulsAddress(address _address) public onlyOwner {
-        soulsAddress = _address;
-    }
-
-    function setWarriorsAddress(address _address) public onlyOwner {
-        warriorsAddress = _address;
-    }
-
-    function setPoniesAddress(address _address) public onlyOwner {
-        poniesAddress = _address;
-    }
-
-    function setBeastsAddress(address _address) public onlyOwner {
-        beastsAddress = _address;
-    }
-
-    function setSpawnAddress(address _address) public onlyOwner {
-        spawnAddress = _address;
+    function setSupportedTokenContract(address _address, bool supported) public onlyOwner {
+        supportedTokenContracts[_address] = supported;
     }
 }
