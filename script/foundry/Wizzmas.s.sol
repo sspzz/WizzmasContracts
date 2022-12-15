@@ -34,7 +34,7 @@ contract WizzmasScript is Script {
         artworkMinter.setMintEnabled(true);
 
         // Cards
-        uint256 numTemplateTypes = 2;
+        uint8 numTemplateTypes = 2;
         address[] memory supportedTokens = new address[](6);
         supportedTokens[0] = vm.envAddress("CONTRACT_ADDRESS_WIZARDS");
         supportedTokens[1] = vm.envAddress("CONTRACT_ADDRESS_SOULS");
