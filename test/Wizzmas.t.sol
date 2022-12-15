@@ -44,6 +44,9 @@ contract WizzmasTest is Test {
     string cardBaseURI = "cardsURI/";
     string artworkBaseURI = "artworkURI/";
 
+    string validMessage = 'Happy Holidays! Eat plenty of Jelly Donuts!';
+    string invalidMessage = 'Happy Holidays! Eat plenty of Jelly Donuts! And watch the Kobold Koolaid its been spiked!';
+
     function setUp() public {
         owner = address(this);
 
@@ -126,7 +129,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         artworkMinter.claim(0);
         wizards.mint();
-        card.mint(address(wizards), 0, 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, validMessage, jro);
         vm.stopPrank();
 
         assertEq(card.tokenURI(0), string.concat(cardBaseURI, "0"));
@@ -134,7 +137,7 @@ contract WizzmasTest is Test {
         assertEq(c.tokenContract, address(wizards));
         assertEq(c.token, 0);
         assertEq(c.artwork, 0);
-        assertEq(c.message, card.messages(0));
+        assertEq(c.message, validMessage);
         assertEq(c.sender, spz);
         assertEq(c.recipient, jro);
     }
@@ -149,7 +152,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         artworkMinter.claim(0);
         wizards.mint();
-        card.mint(address(wizards), 0, 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, validMessage, jro);
         vm.stopPrank();
 
         assertEq(card.getSenderCardIds(spz).length, 1);
@@ -175,12 +178,12 @@ contract WizzmasTest is Test {
         ponies.mint();
         beasts.mint();
         spawn.mint();
-        card.mint(address(wizards), 0, 0, 0, 0, jro);
-        card.mint(address(souls), 0, 0, 0, 0, jro);
-        card.mint(address(warriors), 0, 0, 0, 0, jro);
-        card.mint(address(ponies), 0, 0, 0, 0, jro);
-        card.mint(address(beasts), 0, 0, 0, 0, jro);
-        card.mint(address(spawn), 0, 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, validMessage, jro);
+        card.mint(address(souls), 0, 0, 0, validMessage, jro);
+        card.mint(address(warriors), 0, 0, 0, validMessage, jro);
+        card.mint(address(ponies), 0, 0, 0, validMessage, jro);
+        card.mint(address(beasts), 0, 0, 0, validMessage, jro);
+        card.mint(address(spawn), 0, 0, 0, validMessage, jro);
         vm.stopPrank();
     }
 
@@ -193,10 +196,22 @@ contract WizzmasTest is Test {
         DummyERC721 unsupp = new DummyERC721();
         unsupp.mint();
 
-        console2.log(card.supportedTokenContracts(address(unsupp)));
-
         vm.expectRevert(bytes("Unsupported token contract for mint"));
-        card.mint(address(unsupp), 0, 0, 0, 0, jro);
+        card.mint(address(unsupp), 0, 0, 0, validMessage, jro);
+        vm.stopPrank();
+    }
+
+    function testMintCardWithInvalidMessageLength() public {
+        artworkMinter.setMintEnabled(true);
+        card.setMintEnabled(true);
+
+        vm.prank(jro);
+        wizards.mint();
+
+        vm.startPrank(spz);
+        artworkMinter.claim(0);
+        vm.expectRevert(bytes("Message too long"));
+        card.mint(address(wizards), 0, 0, 0, invalidMessage, jro);
         vm.stopPrank();
     }
 
@@ -209,7 +224,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         artworkMinter.claim(0);
         vm.expectRevert(bytes("NOT_OWNER"));
-        card.mint(address(wizards), 0, 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, validMessage, jro);
         vm.stopPrank();
     }
 
@@ -220,7 +235,7 @@ contract WizzmasTest is Test {
         vm.startPrank(spz);
         wizards.mint();
         vm.expectRevert(bytes("NO_ARTWORK"));
-        card.mint(address(wizards), 0, 0, 0, 0, jro);
+        card.mint(address(wizards), 0, 0, 0, validMessage, jro);
         vm.stopPrank();
     }
 }
