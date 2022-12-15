@@ -15,43 +15,40 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
     using LibString for uint256;
 
     struct Card {
-        uint256 card;
-        address tokenContract;
-        uint256 token;
-        uint256 artwork;
-        uint256 template;
-        string message;
-        address sender;
-        address recipient;
+        uint24 card; // 16m cards allowed, 3 bytes slot1
+        address tokenContract; // 20 bytes, slot1
+        uint16 token; // 2 bytes, slot 1
+        uint8 artwork; // 1 bytes, slot 1 
+        uint8 template; // 1 bytes, slot 1
+        string message; // 64 bytes, 2 slots, slot 2 & 3
+        address sender; // 20 bytes, slot 4
+        address recipient; // 20 bytes, slot 5
     }
-    mapping(uint256 => Card) cards;
-    event WizzmasCardMinted(Card data);
-    uint256 public numTemplates = 0;
-
-    uint256 private nextTokenId = 0;
-
-    address public artworkAddress;
-
-    mapping(address => bool) public supportedTokenContracts;
-
-    string public baseURI;
-
-    bool public mintEnabled = false;
-
-    string[] public messages = [
-        "Have a very Merry Wizzmas!",
-        "May your Holidays be full of !magic",
-        "HoHoHo! Merry Wizzmas!",
-        "Happy Holidays! Eat plenty of Jelly Donuts!"
-    ];
     
-    mapping(address => uint256[]) public senderCards; 
-    mapping(address => uint256[]) public recipientCards;
+    uint8 public numTemplates;
+    uint24 private nextTokenId;
+    address public artworkAddress;
+    string public baseURI;
+    bool public mintEnabled;
+
+    mapping(uint24 => Card) cards;
+    mapping(address => bool) public supportedTokenContracts;
+    mapping(address => uint24[]) public senderCards; 
+    mapping(address => uint24[]) public recipientCards;
+
+    error MintClosed();
+    error InvalidTemplate();
+    error InvalidToken();
+    error InvalidMessageLength();
+    error NotOwnerOfToken();
+    error NoCover();
+
+    event WizzmasCardMinted(Card data);
 
     constructor(
         address _artworkAddress,
         address[] memory _tokenContracts,
-        uint256 _numTemplates,
+        uint8 _numTemplates,
         string memory _initialBaseURI
     ) ERC721("WizzmasCard", "WizzmasCard") Owned(msg.sender) {
         artworkAddress = _artworkAddress;
@@ -59,32 +56,26 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
             supportedTokenContracts[_tokenContracts[i]] = true;
         }
         numTemplates = _numTemplates;
+        mintEnabled = false;
         setBaseURI(_initialBaseURI);
     }
 
     function mint(
         address _tokenContract,
-        uint256 _tokenId,
-        uint256 _artworkId,
-        uint256 _templateId,
+        uint16 _tokenId,
+        uint8 _artworkId,
+        uint8 _templateId,
         string memory _message,
         address _recipient
     ) public nonReentrant {
-        require(mintEnabled, "MINT_CLOSED");
-        require(_templateId < numTemplates, "INVALID_TEMPLATE");
-        require(supportedTokenContracts[_tokenContract] == true, "Unsupported token contract for mint");
-        require(bytes(_message).length < 64, "Message too long"); // keep bytes length of message under 64 to take up 3 slots in storage and 2 slots in memory
-        
-        require(
-            ERC721(_tokenContract).ownerOf(_tokenId) == msg.sender,
-            "NOT_OWNER"
-        );
-        require(
-            ERC1155(artworkAddress).balanceOf(msg.sender, _artworkId) > 0,
-            "NO_ARTWORK"
-        );
+        if (!mintEnabled) revert MintClosed();
+        if (_templateId >= numTemplates) revert InvalidTemplate();
+        if (supportedTokenContracts[_tokenContract] != true) revert InvalidToken();
+        if(bytes(_message).length >= 64 || bytes(_message).length < 1) revert InvalidMessageLength();
+        if(ERC721(_tokenContract).ownerOf(_tokenId) != msg.sender) revert NotOwnerOfToken();
+        if(ERC1155(artworkAddress).balanceOf(msg.sender, _artworkId) < 1) revert NoCover();
 
-        uint256 newId = nextTokenId;
+        uint24 newId = nextTokenId;
         _safeMint(_recipient, newId);
         ++nextTokenId;
 
@@ -104,7 +95,7 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         emit WizzmasCardMinted(cards[newId]);
     }
 
-    function getCard(uint256 cardId) public view returns (Card memory) {
+    function getCard(uint24 cardId) public view returns (Card memory) {
         if (nextTokenId > cardId) {
             return cards[cardId];
         }
@@ -115,16 +106,12 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         return string.concat(baseURI, id.toString());
     }
 
-    function getRecipientCardIds(address recipient) public view returns (uint256[] memory){
+    function getRecipientCardIds(address recipient) public view returns (uint24[] memory){
         return recipientCards[recipient];
     }
 
-    function getSenderCardIds(address sender) public view returns (uint256[] memory) {
+    function getSenderCardIds(address sender) public view returns (uint24[] memory) {
         return senderCards[sender];
-    }
-
-    function availableMessages() public view returns (string[] memory) {
-        return messages;
     }
 
     function _baseURI() internal view virtual returns (string memory) {
@@ -136,26 +123,13 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         payable(msg.sender).transfer(address(this).balance);
     }
 
-    function setNumTemplates(uint256 _numTemplates) public onlyOwner {
+    function setNumTemplates(uint8 _numTemplates) public onlyOwner {
         numTemplates = _numTemplates;
     }
 
-    function addMessage(string memory _message) public onlyOwner {
-        messages.push(_message);
-    }
-
-    function addMessages(string[] memory _messages) public onlyOwner {
-        for (uint i = 0; i < _messages.length; i++) {
-            messages.push(_messages[i]);
-        }
-    }
-
-    function removeMessage(uint index) public onlyOwner {
-        require(index < messages.length, "INDEX_OUT_OF_BOUNDS");
-        for (uint i = index; i < messages.length - 1; i++) {
-            messages[i] = messages[i + 1];
-        }
-        messages.pop();
+    function strikeMessage(uint24 cardId) public onlyOwner {
+        require(cardId < nextTokenId, "Card not minted yet");
+        cards[cardId].message = 'Sender has a dirty kobold mouth xD';
     }
 
     function setBaseURI(string memory _newBaseURI) public onlyOwner {
