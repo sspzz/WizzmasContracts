@@ -37,13 +37,6 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
     string public baseURI;
 
     bool public mintEnabled = false;
-
-    string[] public messages = [
-        "Have a very Merry Wizzmas!",
-        "May your Holidays be full of !magic",
-        "HoHoHo! Merry Wizzmas!",
-        "Happy Holidays! Eat plenty of Jelly Donuts!"
-    ];
     
     mapping(address => uint256[]) public senderCards; 
     mapping(address => uint256[]) public recipientCards;
@@ -123,10 +116,6 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         return senderCards[sender];
     }
 
-    function availableMessages() public view returns (string[] memory) {
-        return messages;
-    }
-
     function _baseURI() internal view virtual returns (string memory) {
         return baseURI;
     }
@@ -140,22 +129,9 @@ contract WizzmasCard is ERC721, Owned, ReentrancyGuard {
         numTemplates = _numTemplates;
     }
 
-    function addMessage(string memory _message) public onlyOwner {
-        messages.push(_message);
-    }
-
-    function addMessages(string[] memory _messages) public onlyOwner {
-        for (uint i = 0; i < _messages.length; i++) {
-            messages.push(_messages[i]);
-        }
-    }
-
-    function removeMessage(uint index) public onlyOwner {
-        require(index < messages.length, "INDEX_OUT_OF_BOUNDS");
-        for (uint i = index; i < messages.length - 1; i++) {
-            messages[i] = messages[i + 1];
-        }
-        messages.pop();
+    function strikeMessage(uint256 cardId) public onlyOwner {
+        require(cardId < nextTokenId, "Card not minted yet");
+        cards[cardId].message = 'Sender has a dirty kobold mouth xD';
     }
 
     function setBaseURI(string memory _newBaseURI) public onlyOwner {
